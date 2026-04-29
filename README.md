@@ -79,11 +79,76 @@ KIRO_CLI_PATH=/usr/local/bin/kiro-cli
 
 ## Running directly
 
+### Local (stdio — default)
+
 ```bash
 python app.py
 ```
 
-Transport is `stdio` (MCP default). Stateless — no DB, no session.
+### Remote (SSE over HTTP)
+
+Run on the machine that has `kiro-cli` installed:
+
+```bash
+TRANSPORT=sse python app.py
+# or with custom host/port:
+TRANSPORT=sse HOST=0.0.0.0 PORT=8000 python app.py
+```
+
+Server starts at `http://0.0.0.0:8000/sse`.
+
+#### Connect from another machine
+
+**Claude Desktop** (`~/.claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "kiro": {
+      "type": "sse",
+      "url": "http://<server-ip>:8000/sse"
+    }
+  }
+}
+```
+
+**Claude Code** (`.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "kiro": {
+      "type": "sse",
+      "url": "http://<server-ip>:8000/sse"
+    }
+  }
+}
+```
+
+#### Keep it running (systemd)
+
+```ini
+# /etc/systemd/system/kiro-mcp.service
+[Unit]
+Description=kiro-mcp SSE server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /path/to/kiro-mcp/app.py
+Environment=TRANSPORT=sse
+Environment=PORT=8000
+Environment=KIRO_CLI_PATH=/root/.local/bin/kiro-cli
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+systemctl enable --now kiro-mcp
+```
+
+> **Note:** No auth built in. Expose only on trusted networks or behind a reverse proxy with auth (nginx, Caddy, etc.).
 
 ---
 
@@ -111,6 +176,9 @@ Quota check happens **before** every `ask_kiro` call to avoid burning paid overa
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `KIRO_CLI_PATH` | `/root/.local/bin/kiro-cli` | Path to the `kiro-cli` binary |
+| `TRANSPORT` | `stdio` | Transport mode: `stdio` (local) or `sse` (remote HTTP) |
+| `HOST` | `0.0.0.0` | Bind host (SSE mode only) |
+| `PORT` | `8000` | Bind port (SSE mode only) |
 
 ---
 

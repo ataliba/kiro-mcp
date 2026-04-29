@@ -11,6 +11,9 @@ if os.path.exists('.env'):
                 os.environ[key] = value
 
 KIRO_CLI_PATH = os.getenv('KIRO_CLI_PATH', '/root/.local/bin/kiro-cli')
+TRANSPORT = os.getenv('TRANSPORT', 'stdio')
+HOST = os.getenv('HOST', '0.0.0.0')
+PORT = int(os.getenv('PORT', '8000'))
 
 mcp = FastMCP("kiro-mcp")
 
@@ -81,4 +84,7 @@ def get_kiro_quota() -> dict:
 
 
 if __name__ == '__main__':
-    mcp.run()
+    if TRANSPORT == 'sse':
+        mcp.run(transport='sse', host=HOST, port=PORT)
+    else:
+        mcp.run()
